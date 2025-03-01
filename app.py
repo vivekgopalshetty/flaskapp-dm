@@ -10,7 +10,7 @@
 # import tensorflow as tf
 # import gdown
 # import threading
-# from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template
 # from gevent.pywsgi import WSGIServer
 # from tensorflow.keras.applications.vgg16 import preprocess_input
 # from tensorflow.keras.preprocessing.image import load_img, img_to_array
@@ -197,9 +197,12 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-@app.route('/')
+# Flask Routes
+@app.route('/', methods=['GET'])
 def home():
-    return "Welcome to the Flask App!"
+    # if not models_loaded:
+    #     return "<h1>Loading models, please wait...</h1>", 503
+    return render_template('index.html')
 
 @app.route('/predict', methods=['POST'])
 def predict():
