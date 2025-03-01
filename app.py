@@ -16,8 +16,8 @@ from tensorflow.keras.preprocessing.image import load_img, img_to_array
 from werkzeug.utils import secure_filename
 
 # Set up logging
-logging.basicConfig(filename='flask_app.log', level=logging.DEBUG,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+# logging.basicConfig(filename='flask_app.log', level=logging.DEBUG,
+#                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Flask App Configuration
 app = Flask(__name__)
