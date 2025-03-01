@@ -186,6 +186,5 @@ def predict():
     })
 
 if __name__ == '__main__':
-    # Start the Flask app first
-    threading.Thread(target=load_models, daemon=True).start()
-    app.run(debug=True, port=5000)
+    app.run()
+    #threading.Thread(target=load_models, daemon=True).start()
