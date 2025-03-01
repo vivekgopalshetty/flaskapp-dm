@@ -30,10 +30,10 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # Google Drive File IDs (Replace with your actual IDs)
 file_ids = {
     "denseNet201_epochs_10_batchsize_32_lr_0.0001.bin": "1Dlp1Ez4HUEvwO0EmgbQSVx7hOyxpzbWe",
-    "densenet_epochs_10_batchsize_128_lr_01.1.0001.bin": "1Dlp1Ez4HUEvwO0EmgbQSVx7hOyxpzbWe",
+    # "densenet_epochs_10_batchsize_128_lr_01.1.0001.bin": "1Dlp1Ez4HUEvwO0EmgbQSVx7hOyxpzbWe",
     "vgg.h5": "1Y6qGvT_wmyTHs80JnwKTbUKpGhVJSKHJ",
-    "resnet.h5": "18P1bOVnmsMUNSEUZalE2QGeSfVI8Hveu",
-    "ensemble_epochs_10_batchsize_128_lr_0.1.0001.bin": "18P1bOVnmsMUNSEUZalE2QGeSfVI8Hveu"
+    # "resnet.h5": "18P1bOVnmsMUNSEUZalE2QGeSfVI8Hveu",
+    # "ensemble_epochs_10_batchsize_128_lr_0.1.0001.bin": "18P1bOVnmsMUNSEUZalE2QGeSfVI8Hveu"
 }
 
 # Download files from Google Drive
@@ -74,7 +74,7 @@ class DenseNet201(nn.Module):
 
 # Load PyTorch Models
 dmodel1_path = os.path.join(ASSET_FOLDER, "denseNet201_epochs_10_batchsize_32_lr_0.0001.bin")
-dmodel2_path = os.path.join(ASSET_FOLDER, "densenet_epochs_10_batchsize_128_lr_01.1.0001.bin")
+dmodel2_path = os.path.join(ASSET_FOLDER, "denseNet201_epochs_10_batchsize_32_lr_0.0001.bin")
 
 dmodel1 = DenseNet201(3)
 dmodel1.load_state_dict(torch.load(dmodel1_path, map_location=torch.device('cpu')))
@@ -87,7 +87,7 @@ dmodel2.eval()
 # Load TensorFlow Models
 models = {
     "VGG16": tf.keras.models.load_model(os.path.join(ASSET_FOLDER, "vgg.h5")),
-    "ResNet201": tf.keras.models.load_model(os.path.join(ASSET_FOLDER, "resnet.h5")),
+    "ResNet201": tf.keras.models.load_model(os.path.join(ASSET_FOLDER, "vgg.h5")),
     "DenseNet201 (32 batch)": dmodel1,
     "DenseNet201 (128 batch)": dmodel2,
     "Ensemble model": tf.keras.models.load_model(os.path.join(ASSET_FOLDER, "vgg.h5")),
