@@ -11,6 +11,7 @@ import tensorflow as tf
 import gdown
 import threading
 from flask import Flask, request, jsonify, render_template
+from gevent.pywsgi import WSGIServer
 from tensorflow.keras.applications.vgg16 import preprocess_input
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
 from werkzeug.utils import secure_filename
@@ -186,5 +187,8 @@ def predict():
     })
 
 if __name__ == '__main__':
-    app.run()
+    # Debug/Development
+    # app.run(debug=True, host="0.0.0.0", port="10000")
+    http_server = WSGIServer(('0.0.0.0', 10000), app)
+    http_server.serve_forever()
     #threading.Thread(target=load_models, daemon=True).start()
