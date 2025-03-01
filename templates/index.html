@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dark Matter Subhalo Image Classification and Generation using DDPMs (AIMLCZG628T)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            background-color: #003366;
+            padding: 15px;
+            color: white;
+        }
+
+        .header img {
+            width: 60px;
+            margin-right: 15px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            width: 50%;
+            margin: 20px auto;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        input, select, button {
+            padding: 10px;
+            margin: 10px;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: #003366;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #00509E;
+        }
+
+        #uploadedImage {
+            display: none;
+            width: 300px;
+            margin-top: 20px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .info {
+            background: #fff;
+            padding: 15px;
+            width: 50%;
+            margin: 20px auto;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            text-align: left;
+        }
+
+        .info h3 {
+            color: #003366;
+        }
+
+    </style>
+    <script>
+        function uploadImage() {
+            let formData = new FormData();
+            let fileInput = document.getElementById("fileInput");
+            let modelSelect = document.getElementById("model");
+
+            if (fileInput.files.length === 0) {
+                alert("Please select an image.");
+                return;
+            }
+
+            formData.append("file", fileInput.files[0]);
+            formData.append("model", modelSelect.value);
+
+            fetch("/predict", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                // Display Image
+                document.getElementById("uploadedImage").src = data.image;
+                document.getElementById("uploadedImage").style.display = "block";
+
+                // Display Prediction and Score
+                document.getElementById("predictionText").innerText = "Prediction: " + data.prediction;
+                document.getElementById("scoreText").innerText = "Score: " + data.score.toFixed(2);
+            })
+            .catch(error => console.error("Error:", error));
+        }
+    </script>
+</head>
+<body>
+
+    <!-- Header Section -->
+    <div class="header">
+        <img src="https://upload.wikimedia.org/wikipedia/en/thumb/d/d3/BITS_Pilani-Logo.svg/1280px-BITS_Pilani-Logo.svg.png" alt="BITS Pilani Logo">
+        <h1>Dark Matter Subhalo Image Classification and Generation using DDPMs (AIMLCZG628T)</h1>
+    </div>
+
+    <!-- Upload Section -->
+    <div class="container">
+        <h2>Upload an Image for Prediction</h2>
+
+        <input type="file" id="fileInput">
+        <select name="model" id="model">
+            {% for model in models %}
+                <option value="{{ model }}">{{ model }}</option>
+            {% endfor %}
+        </select>
+        <button onclick="uploadImage()">Predict</button>
+
+        <h3 id="predictionText"></h3>
+        <h3 id="scoreText"></h3>
+
+        <img id="uploadedImage" alt="Uploaded Image">
+    </div>
+
+    <!-- Personal Info Section -->
+    <div class="info">
+        <h3>About Me</h3>
+        <p><strong>Name:</strong>Gopalasetty Vivek (2022AC05534)</p>
+        <p><strong>Program:</strong> MTech AIML, BITS Pilani</p>
+        <p><strong>Research Interest:</strong> Deep Learning, Computer Vision, Generative Models</p>
+    </div>
+
+</body>
+</html>
