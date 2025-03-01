@@ -21,87 +21,85 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-#
-# # Set up logging
-# # logging.basicConfig(filename='flask_app.log', level=logging.DEBUG,
-# #                     format='%(asctime)s - %(levelname)s - %(message)s')
-#
-# # Flask App Configuration
-# app = Flask(__name__)
-# UPLOAD_FOLDER = 'uploads'
-# ASSET_FOLDER = 'assets'
-# os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-# os.makedirs(ASSET_FOLDER, exist_ok=True)
-# app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# Set up logging
+# logging.basicConfig(filename='flask_app.log', level=logging.DEBUG,
+#                     format='%(asctime)s - %(levelname)s - %(message)s')
+
+UPLOAD_FOLDER = 'uploads'
+ASSET_FOLDER = 'assets'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(ASSET_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 #
 # # Global variables to track model loading status
 models = {}
 models_loaded = False
-#
-# # Google Drive File IDs (Replace with your actual IDs)
-# file_ids = {
-#     "denseNet201_epochs_10_batchsize_32_lr_0.0001.bin": "1Dlp1Ez4HUEvwO0EmgbQSVx7hOyxpzbWe",
-#     #"vgg.h5": "1Y6qGvT_wmyTHs80JnwKTbUKpGhVJSKHJ",
-# }
-#
-# # Download function
-# def download_assets():
-#     for filename, file_id in file_ids.items():
-#         file_path = os.path.join(ASSET_FOLDER, filename)
-#         if not os.path.exists(file_path):
-#             print(f"Downloading {filename}...")
-#             gdown.download(f"https://drive.google.com/uc?id={file_id}", file_path, quiet=False)
-#         else:
-#             print(f"{filename} already exists, skipping.")
-#
-# # PyTorch Model Definition
-# class DenseNet201(nn.Module):
-#     def __init__(self, n_classes):
-#         super(DenseNet201, self).__init__()
-#         self.transfer_learning_model = timm.create_model("densenet201", pretrained=True, in_chans=1)
-#
-#         for param in self.transfer_learning_model.parameters():
-#             param.requires_grad = True
-#
-#         self.classifier = nn.Sequential(
-#             nn.Linear(1920 * 4 * 4, 1024),
-#             nn.ReLU(),
-#             nn.BatchNorm1d(1024),
-#             nn.Dropout(p=0.33),
-#             nn.Linear(1024, 64),
-#             nn.ReLU(),
-#             nn.BatchNorm1d(64),
-#             nn.Dropout(p=0.33),
-#             nn.Linear(64, n_classes)
-#         )
-#
-#     def forward(self, x):
-#         x = self.transfer_learning_model.forward_features(x)
-#         x = x.view(-1, 1920 * 4 * 4)
-#         x = self.classifier(x)
-#         return x
-#
-# # Load Models in Background Thread
-# def load_models():
-#     global models, models_loaded
-#
-#     print("Downloading assets if needed...")
-#     download_assets()
-#
-#     print("Loading models...")
-#     dmodel1_path = os.path.join(ASSET_FOLDER, "denseNet201_epochs_10_batchsize_32_lr_0.0001.bin")
-#
-#     dmodel1 = DenseNet201(3)
-#     dmodel1.load_state_dict(torch.load(dmodel1_path, map_location=torch.device('cpu')))
-#     dmodel1.eval()
-#
-#     models = {
-#         "DenseNet201 (32 batch)": dmodel1,
-#         #"VGG16": tf.keras.models.load_model(os.path.join(ASSET_FOLDER, "vgg.h5")),
-#     }
-#
-#     models_loaded = True
-#     print("✅ Models loaded successfully!")
+
+# Google Drive File IDs (Replace with your actual IDs)
+file_ids = {
+    "denseNet201_epochs_10_batchsize_32_lr_0.0001.bin": "1Dlp1Ez4HUEvwO0EmgbQSVx7hOyxpzbWe",
+    #"vgg.h5": "1Y6qGvT_wmyTHs80JnwKTbUKpGhVJSKHJ",
+}
+
+# Download function
+def download_assets():
+    for filename, file_id in file_ids.items():
+        file_path = os.path.join(ASSET_FOLDER, filename)
+        if not os.path.exists(file_path):
+            print(f"Downloading {filename}...")
+            gdown.download(f"https://drive.google.com/uc?id={file_id}", file_path, quiet=False)
+        else:
+            print(f"{filename} already exists, skipping.")
+
+# PyTorch Model Definition
+class DenseNet201(nn.Module):
+    def __init__(self, n_classes):
+        super(DenseNet201, self).__init__()
+        self.transfer_learning_model = timm.create_model("densenet201", pretrained=True, in_chans=1)
+
+        for param in self.transfer_learning_model.parameters():
+            param.requires_grad = True
+
+        self.classifier = nn.Sequential(
+            nn.Linear(1920 * 4 * 4, 1024),
+            nn.ReLU(),
+            nn.BatchNorm1d(1024),
+            nn.Dropout(p=0.33),
+            nn.Linear(1024, 64),
+            nn.ReLU(),
+            nn.BatchNorm1d(64),
+            nn.Dropout(p=0.33),
+            nn.Linear(64, n_classes)
+        )
+
+    def forward(self, x):
+        x = self.transfer_learning_model.forward_features(x)
+        x = x.view(-1, 1920 * 4 * 4)
+        x = self.classifier(x)
+        return x
+
+# Load Models in Background Thread
+def load_models():
+    global models, models_loaded
+
+    print("Downloading assets if needed...")
+    download_assets()
+
+    print("Loading models...")
+    dmodel1_path = os.path.join(ASSET_FOLDER, "denseNet201_epochs_10_batchsize_32_lr_0.0001.bin")
+
+    dmodel1 = DenseNet201(3)
+    dmodel1.load_state_dict(torch.load(dmodel1_path, map_location=torch.device('cpu')))
+    dmodel1.eval()
+
+    models = {
+        "DenseNet201 (32 batch)": dmodel1,
+        #"VGG16": tf.keras.models.load_model(os.path.join(ASSET_FOLDER, "vgg.h5")),
+    }
+
+    models_loaded = True
+    print("✅ Models loaded successfully!")
 #
 # Image Preprocessing for PyTorch
 def preprocess_image_pytorch(image_path):
@@ -147,14 +145,7 @@ def get_prediction(image_path, model_name):
         predicted_score = predictions[0][predicted_class]
 
     return predicted_class, predicted_score
-#
-# # Flask Routes
-# @app.route('/', methods=['GET'])
-# def home():
-#     # if not models_loaded:
-#     #     return "<h1>Loading models, please wait...</h1>", 503
-#     return render_template('index.html')
-#
+
 @app.route('/predict', methods=['POST'])
 def predict():
     if not models_loaded:
