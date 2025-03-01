@@ -144,8 +144,8 @@ def get_prediction(image_path, model_name):
 # Flask Routes
 @app.route('/', methods=['GET'])
 def home():
-    if not models_loaded:
-        return "<h1>Loading models, please wait...</h1>", 503
+    # if not models_loaded:
+    #     return "<h1>Loading models, please wait...</h1>", 503
     return render_template('index.html')
 
 @app.route('/predict', methods=['POST'])
@@ -186,5 +186,6 @@ def predict():
     })
 
 if __name__ == '__main__':
+
     app.run()
     #threading.Thread(target=load_models, daemon=True).start()
