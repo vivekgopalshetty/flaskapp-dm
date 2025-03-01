@@ -1,20 +1,26 @@
-# import os
-# import base64
-# import logging
-# import cv2
-# import numpy as np
-# import torch
-# import torch.nn as nn
-# import torch.nn.functional as F
-# import timm
-# import tensorflow as tf
-# import gdown
-# import threading
+import os
+import base64
+import logging
+import cv2
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import timm
+import tensorflow as tf
+import gdown
+import threading
 from flask import Flask, request, jsonify, render_template
-# from gevent.pywsgi import WSGIServer
-# from tensorflow.keras.applications.vgg16 import preprocess_input
-# from tensorflow.keras.preprocessing.image import load_img, img_to_array
-# from werkzeug.utils import secure_filename
+from gevent.pywsgi import WSGIServer
+from tensorflow.keras.applications.vgg16 import preprocess_input
+from tensorflow.keras.preprocessing.image import load_img, img_to_array
+from werkzeug.utils import secure_filename
+
+
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
 #
 # # Set up logging
 # # logging.basicConfig(filename='flask_app.log', level=logging.DEBUG,
@@ -29,8 +35,8 @@ from flask import Flask, request, jsonify, render_template
 # app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 #
 # # Global variables to track model loading status
-# models = {}
-# models_loaded = False
+models = {}
+models_loaded = False
 #
 # # Google Drive File IDs (Replace with your actual IDs)
 # file_ids = {
@@ -97,50 +103,50 @@ from flask import Flask, request, jsonify, render_template
 #     models_loaded = True
 #     print("✅ Models loaded successfully!")
 #
-# # Image Preprocessing for PyTorch
-# def preprocess_image_pytorch(image_path):
-#     image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-#     image = cv2.resize(image, (150, 150))
-#     image = image / 255.0
-#     image = np.expand_dims(image, axis=0)
-#     image_tensor = torch.tensor(image, dtype=torch.float32).unsqueeze(0)
-#     return image_tensor
+# Image Preprocessing for PyTorch
+def preprocess_image_pytorch(image_path):
+    image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    image = cv2.resize(image, (150, 150))
+    image = image / 255.0
+    image = np.expand_dims(image, axis=0)
+    image_tensor = torch.tensor(image, dtype=torch.float32).unsqueeze(0)
+    return image_tensor
+
+# Image Preprocessing for TensorFlow
+def preprocess_image_tf(image_path):
+    img = load_img(image_path, target_size=(224, 224))
+    img_array = img_to_array(img)
+    img_array = np.expand_dims(img_array, axis=0)
+    return preprocess_input(img_array)
+
+# Prediction for PyTorch
+def predict_pytorch(image_path, model):
+    image_tensor = preprocess_image_pytorch(image_path)
+    with torch.no_grad():
+        output = model(image_tensor)
+        probabilities = F.softmax(output, dim=1)
+        predicted_class = torch.argmax(probabilities, dim=1).item()
+    return predicted_class, probabilities.cpu().numpy()[0]
 #
-# # Image Preprocessing for TensorFlow
-# def preprocess_image_tf(image_path):
-#     img = load_img(image_path, target_size=(224, 224))
-#     img_array = img_to_array(img)
-#     img_array = np.expand_dims(img_array, axis=0)
-#     return preprocess_input(img_array)
-#
-# # Prediction for PyTorch
-# def predict_pytorch(image_path, model):
-#     image_tensor = preprocess_image_pytorch(image_path)
-#     with torch.no_grad():
-#         output = model(image_tensor)
-#         probabilities = F.softmax(output, dim=1)
-#         predicted_class = torch.argmax(probabilities, dim=1).item()
-#     return predicted_class, probabilities.cpu().numpy()[0]
-#
-# # Prediction Function
-# def get_prediction(image_path, model_name):
-#     if not models_loaded:
-#         return None, None
-#
-#     model = models.get(model_name)
-#     if model is None:
-#         return None, None
-#
-#     if "DenseNet201" in model_name:
-#         predicted_class, score = predict_pytorch(image_path, model)
-#         predicted_score = score[predicted_class]
-#     else:
-#         img_array = preprocess_image_tf(image_path)
-#         predictions = model.predict(img_array)
-#         predicted_class = np.argmax(predictions, axis=1)[0]
-#         predicted_score = predictions[0][predicted_class]
-#
-#     return predicted_class, predicted_score
+# Prediction Function
+def get_prediction(image_path, model_name):
+    if not models_loaded:
+        return None, None
+
+    model = models.get(model_name)
+    if model is None:
+        return None, None
+
+    if "DenseNet201" in model_name:
+        predicted_class, score = predict_pytorch(image_path, model)
+        predicted_score = score[predicted_class]
+    else:
+        img_array = preprocess_image_tf(image_path)
+        predictions = model.predict(img_array)
+        predicted_class = np.argmax(predictions, axis=1)[0]
+        predicted_score = predictions[0][predicted_class]
+
+    return predicted_class, predicted_score
 #
 # # Flask Routes
 # @app.route('/', methods=['GET'])
@@ -149,42 +155,42 @@ from flask import Flask, request, jsonify, render_template
 #     #     return "<h1>Loading models, please wait...</h1>", 503
 #     return render_template('index.html')
 #
-# @app.route('/predict', methods=['POST'])
-# def predict():
-#     if not models_loaded:
-#         return jsonify({"error": "Models are still loading"}), 503
-#
-#     if 'file' not in request.files:
-#         return jsonify({"error": "No file uploaded"}), 400
-#
-#     file = request.files['file']
-#     if file.filename == '':
-#         return jsonify({"error": "No file selected"}), 400
-#
-#     filename = secure_filename(file.filename)
-#     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-#     file.save(file_path)
-#
-#     model_name = request.form.get('model')
-#     if model_name not in models:
-#         return jsonify({"error": "Invalid model selected"}), 400
-#
-#     predicted_class, predicted_score = get_prediction(file_path, model_name)
-#     if predicted_class is None:
-#         return jsonify({"error": "Prediction failed"}), 500
-#
-#     class_names = ['No', 'Sphere', 'Vortex']
-#     class_name = class_names[predicted_class]
-#
-#     # Convert image to Base64
-#     with open(file_path, "rb") as image_file:
-#         encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
-#
-#     return jsonify({
-#         "prediction": class_name,
-#         "score": float(predicted_score),
-#         "image": f"data:image/png;base64,{encoded_string}"
-#     })
+@app.route('/predict', methods=['POST'])
+def predict():
+    if not models_loaded:
+        return jsonify({"error": "Models are still loading"}), 503
+
+    if 'file' not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "No file selected"}), 400
+
+    filename = secure_filename(file.filename)
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(file_path)
+
+    model_name = request.form.get('model')
+    if model_name not in models:
+        return jsonify({"error": "Invalid model selected"}), 400
+
+    predicted_class, predicted_score = get_prediction(file_path, model_name)
+    if predicted_class is None:
+        return jsonify({"error": "Prediction failed"}), 500
+
+    class_names = ['No', 'Sphere', 'Vortex']
+    class_name = class_names[predicted_class]
+
+    # Convert image to Base64
+    with open(file_path, "rb") as image_file:
+        encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+
+    return jsonify({
+        "prediction": class_name,
+        "score": float(predicted_score),
+        "image": f"data:image/png;base64,{encoded_string}"
+    })
 #
 # if __name__ == '__main__':
 #     # Debug/Development
@@ -193,9 +199,6 @@ from flask import Flask, request, jsonify, render_template
 #     http_server.serve_forever()
 #     #threading.Thread(target=load_models, daemon=True).start()
 
-from flask import Flask, request, jsonify
-
-app = Flask(__name__)
 
 # Flask Routes
 @app.route('/', methods=['GET'])
@@ -203,17 +206,6 @@ def home():
     # if not models_loaded:
     #     return "<h1>Loading models, please wait...</h1>", 503
     return render_template('index.html')
-
-@app.route('/predict', methods=['POST'])
-def predict():
-    data = request.get_json()
-    if not data or 'value' not in data:
-        return jsonify({"error": "No input provided"}), 400
-
-    value = data['value']
-    prediction = value * 2  # Example logic (double the value)
-
-    return jsonify({"input": value, "prediction": prediction})
 
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0", port=10000)
