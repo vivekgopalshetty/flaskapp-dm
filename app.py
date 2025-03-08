@@ -95,6 +95,9 @@ def load_models():
 
     models = {
         "DenseNet201 (32 batch)": dmodel1,
+        "DenseNet201 (128 batch)": dmodel1,
+        "Vgg16" : "",
+        "resnet" : ""
         #"VGG16": tf.keras.models.load_model(os.path.join(ASSET_FOLDER, "vgg.h5")),
     }
 
@@ -128,7 +131,6 @@ def predict_pytorch(image_path, model):
 #
 # Prediction Function
 def get_prediction(image_path, model_name):
-    load_models()
     if not models_loaded:
         return None, None
 
@@ -149,8 +151,9 @@ def get_prediction(image_path, model_name):
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    if not models_loaded:
-        return jsonify({"error": "Models are still loading"}), 503
+    load_models()
+    # if not models_loaded:
+    #     return jsonify({"error": "Models are still loading"}), 503
 
     if 'file' not in request.files:
         return jsonify({"error": "No file uploaded"}), 400
